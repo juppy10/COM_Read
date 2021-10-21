@@ -10,7 +10,7 @@ count = 0
 
 with open('data.csv', 'w', newline='') as dataFile:
     dataWriter = csv.writer(dataFile)
-    dataWriter.writerow(["time (ms)", "X-Axis Acc (G)", "Y-Axis Acc (G)", "Z-Axis Acc (G)", "ADC (mV)", "CAN ID", "CAN Data"])
+    dataWriter.writerow(["time (ms)", "X-Axis Acc (G)", "Y-Axis Acc (G)", "Z-Axis Acc (G)", "ADC (mV)", "CAN ID", "CAN Data", "GNSS Data"])
     start = time.time()
 
 while 1:
@@ -22,18 +22,21 @@ while 1:
         serialStringADC = serialPort.read(2)
         CANID = serialPort.read(1)
         CANData = serialPort.read(1)
+        GNSS_Length = int.from_bytes(serialPort.read(1), byteorder='big')
+        GNSS_Data = serialPort.read(GNSS_Length)
         nowGx = (int.from_bytes(serialStringX, byteorder='big', signed=True) / 16384) - 0.192
         nowGy = (int.from_bytes(serialStringY, byteorder='big', signed=True) / 16384) - 0.178
         nowGz = (int.from_bytes(serialStringZ, byteorder='big', signed=True) / 16384) - 0.096
         nowADC = int.from_bytes(serialStringADC, byteorder='big', signed=True) / 1.218
         CANID = codecs.encode(CANID, "hex")
         CANData = codecs.encode(CANData, "hex")
-        count = count + 0.01
+        GNSS_Data = GNSS_Data.decode('Ascii')
+        count = count + 1
         with open('data.csv', 'a', newline='') as dataFile:
             dataWriter = csv.writer(dataFile)
-            dataWriter.writerow([str(count), str(nowGx), str(nowGy), str(nowGz), str(nowADC), str(CANID), str(CANData)])
+            dataWriter.writerow([str(count), str(nowGx), str(nowGy), str(nowGz), str(nowADC), str(CANID), str(CANData),GNSS_Data])
             print(count)
-            if count > 10:
+            if count > 5:
                 end = time.time()
                 print("Time:", end - start)
                 break
